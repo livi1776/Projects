@@ -1,0 +1,39 @@
+import pandas as pd
+import numpy as np
+import geopandas as gpd
+import matplotlib.pyplot as plt
+fp = "/Documents/Geographic data_ Zip Codes (Shape File)/geo_export_caa4ac7c-f972-4ec6-bf5e-185ac0de6e39.shp"
+map_df = gpd.read_file(fp)
+map_df.head()
+
+map_df.plot()
+plt.rcParams['figure.figsize'] = [50, 50] #height, width
+map_df.plot()
+
+# csv file of each zip code and its median and mean income
+province = pd.read_csv("/Documents/MoCoIncome.csv")
+province.head()
+merged = map_df.merge(province, how='left', left_on="zipcode", right_on="Zip Code")
+merged = merged[['zipcode', 'geometry', 'Name','Median','Mean', 'Pop']]
+merged.head()
+
+variable = 'Median'
+vmin, vmax = 0, 500000
+fig, ax = plt.subplots(1, figsize=(30, 10))
+ax.axis('off')
+ax.set_title('Income per Zipcode', fontdict={'fontsize': '25', 'fontweight' : '3'})
+
+# Create colorbar legend
+sm = plt.cm.ScalarMappable(cmap='Blues', norm=plt.Normalize(vmin=vmin, vmax=vmax))
+# empty array for the data range
+sm.set_array([]) # or alternatively sm._A = []. Not sure why this step is necessary, but many recommends it
+# add the colorbar to the figure
+fig.colorbar(sm)
+# create map
+merged.plot(column=variable, cmap='Blues', linewidth=0.8, ax=ax, edgecolor='0.8')
+
+# Add Labels
+merged['coords'] = merged['geometry'].apply(lambda x: x.representative_point().coords[:])
+merged['coords'] = [coords[0] for coords in merged['coords']]
+for idx, row in merged.iterrows():
+    plt.annotate(s=row['zipcode'], xy=row['coords'],horizontalalignment='center')
